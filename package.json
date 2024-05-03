@@ -2,6 +2,7 @@
   "name": "subtitle-extractor",
   "scripts": {
     "start": "ts-node ./src/index.ts",
+    "start:prod": "node ./dist/index.js",
     "build": "tsc"
   },
   "packageManager": "yarn@4.1.1",
