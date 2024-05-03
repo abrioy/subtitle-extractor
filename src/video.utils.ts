@@ -90,6 +90,6 @@ export class VideoUtils {
   }
 
   private static formatSubtitleTitle(title: string): string {
-    return title.toLowerCase().replaceAll(/[^a-z0-9]/gi, "_");
+    return (title||'').toLowerCase().replaceAll(/[^a-z0-9]/gi, "_");
   }
 }
