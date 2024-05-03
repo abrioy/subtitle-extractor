@@ -24,10 +24,10 @@ export interface SubtitleStream {
 }
 
 export class VideoUtils {
-  private static readonly FFPROBE_TIMEOUT = 15000;
-  private static readonly FFMPEG_TIMEOUT = 150000;
-
-  static async getSubtitleStreams(file: VideoFile): Promise<SubtitleStream[]> {
+  static async getSubtitleStreams(
+    file: VideoFile,
+    timeout: number,
+  ): Promise<SubtitleStream[]> {
     const ffprobeOutput: FFProbeOutput = JSON.parse(
       await ExecUtils.execAndGetStdout(
         "ffprobe",
@@ -40,7 +40,7 @@ export class VideoUtils {
           "-show_streams",
           file.path,
         ],
-        this.FFPROBE_TIMEOUT,
+        timeout,
       ),
     );
     return ffprobeOutput.streams
@@ -56,6 +56,7 @@ export class VideoUtils {
   static async extractSubtitleStream(
     file: VideoFile,
     subtitleStream: SubtitleStream,
+    timeout: number,
   ): Promise<string> {
     const subtitlePath = this.generateSubtitlePath(file, subtitleStream);
     console.log(
@@ -73,7 +74,7 @@ export class VideoUtils {
         subtitleStream.type,
         subtitlePath,
       ],
-      this.FFMPEG_TIMEOUT,
+      timeout,
     );
     return subtitlePath;
   }

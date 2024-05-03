@@ -30,5 +30,9 @@ RUN volta install node yarn
 RUN yarn --immutable
 RUN yarn build
 
+ENV SUBTITLE_EXTRACTOR_PATH "/data"
+ENV SUBTITLE_EXTRACTOR_LANGUAGE "en, fr"
+ENV SUBTITLE_EXTRACTOR_TIMEOUT "150000"
+
 ENTRYPOINT []
 CMD ["yarn", "start:prod"]
