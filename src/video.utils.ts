@@ -9,6 +9,25 @@ export interface FFProbeOutput {
     index: number;
     codec_name: string;
     codec_type: string;
+    disposition: {
+      default: 0 | 1;
+      dub: 0 | 1;
+      original: 0 | 1;
+      comment: 0 | 1;
+      lyrics: 0 | 1;
+      karaoke: 0 | 1;
+      forced: 0 | 1;
+      hearing_impaired: 0 | 1;
+      visual_impaired: 0 | 1;
+      clean_effects: 0 | 1;
+      attached_pic: 0 | 1;
+      timed_thumbnails: 0 | 1;
+      captions: 0 | 1;
+      descriptions: 0 | 1;
+      metadata: 0 | 1;
+      dependent: 0 | 1;
+      still_image: 0 | 1;
+    };
     tags: {
       language: string;
       title: string;
@@ -20,6 +39,7 @@ export interface SubtitleStream {
   index: number;
   type: string;
   title: string | null;
+  dispositions: string[];
   language: string;
 }
 
@@ -35,9 +55,10 @@ export class VideoUtils {
           "-v",
           "quiet",
           "-print_format",
-          "json",
-          "-show_format",
+          "json=compact=1",
           "-show_streams",
+          "-show_entries",
+          "stream=index,codec_name,codec_type,tags,disposition",
           file.path,
         ],
         timeout,
@@ -49,6 +70,9 @@ export class VideoUtils {
         index: stream.index || -1,
         type: stream.codec_name || "",
         title: stream.tags.title || null,
+        dispositions: Object.entries(stream.disposition)
+          .filter(([, value]) => !!value)
+          .map(([key]) => key),
         language: stream.tags.language || "",
       }))
       .filter(
@@ -63,7 +87,7 @@ export class VideoUtils {
   ): Promise<string> {
     const subtitlePath = this.generateSubtitlePath(file, subtitleStream);
     console.log(
-      `Extracting subtitle "${chalk.bold(subtitleStream.title)}" to "${chalk.dim(subtitlePath)}"...`,
+      `Extracting subtitle "${chalk.bold(subtitleStream.title || "")}" to "${chalk.dim(subtitlePath)}"...`,
     );
     await ExecUtils.execAndGetStdout(
       "ffmpeg",
@@ -88,15 +112,29 @@ export class VideoUtils {
   ): string {
     return path.join(
       file.dirPath,
-      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${subtitleStream.type}`,
+      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${this.getSubtitleExtension(subtitleStream)}`,
     );
   }
 
   private static getSubtitleSuffix(subtitleStream: SubtitleStream): string {
+    const dispositions = subtitleStream.dispositions.join(".");
     const title = (subtitleStream.title || "")
       .toLowerCase()
       .replaceAll(/[^a-z0-9]/gi, "_")
       .trim();
-    return `embedded_${subtitleStream.index}` + (title ? `_${title}` : "");
+    return (
+      (dispositions ? `${dispositions}.` : "") +
+      `embedded_${subtitleStream.index}` +
+      (title ? `_${title}` : "")
+    );
+  }
+
+  private static getSubtitleExtension(subtitleStream: SubtitleStream): string {
+    switch (subtitleStream.type) {
+      case "subrip":
+        return "srt";
+      default:
+        return subtitleStream.type;
+    }
   }
 }

@@ -23,7 +23,7 @@ export class ExecUtils {
       const childProcess = exec(command);
 
       childProcess.stdout?.on("data", (data: string) => {
-        //console.log('>', data);
+        // console.log(chalk.cyan('>'), data);
         subscriber.next({
           stream: "stdout",
           data,
@@ -31,7 +31,7 @@ export class ExecUtils {
       });
 
       childProcess.stderr?.on("data", (data: string) => {
-        //console.log('>', data);
+        // console.log(chalk.cyan('>'), data);
         subscriber.next({
           stream: "stderr",
           data,
