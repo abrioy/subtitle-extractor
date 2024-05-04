@@ -1,7 +1,9 @@
+import chalk = require("chalk");
 import exp = require("constants");
 import { differenceInMilliseconds } from "date-fns";
-import { promises as fs, Dirent } from "fs";
+import { promises as fs, Dirent, FSWatcher, watch } from "fs";
 import * as path from "path";
+import { Observable } from "rxjs";
 
 export interface SubtitleFile {
   path: string;
@@ -17,13 +19,16 @@ export interface VideoFile {
 }
 
 export class FileUtils {
-  static async *walk(dirPath: string): AsyncGenerator<VideoFile> {
+  static async *walk(
+    allowedExtensions: string[],
+    dirPath: string,
+  ): AsyncGenerator<VideoFile> {
     const entries = await fs.readdir(dirPath, { withFileTypes: true });
     for (const entry of entries) {
       const fullPath = path.join(dirPath, entry.name);
       if (entry.isDirectory()) {
-        yield* this.walk(fullPath);
-      } else if (this.isVideoFile(fullPath)) {
+        yield* this.walk(allowedExtensions, fullPath);
+      } else if (this.isVideoFile(allowedExtensions, fullPath)) {
         const stats = await fs.stat(fullPath);
         const file: VideoFile = {
           path: fullPath,
@@ -68,15 +73,6 @@ export class FileUtils {
     return result;
   }
 
-  private static isVideoFile(filePath: string): boolean {
-    const fileExt = path.extname(filePath);
-    return !!fileExt && [".mkv"].includes(fileExt);
-  }
-
-  private static isEmbeddedSubtitleFile(fileName: string): boolean {
-    return !!/[.]embedded_/.exec(fileName);
-  }
-
   static async setFileLastModifiedTime(
     path: string,
     time: Date,
@@ -86,5 +82,43 @@ export class FileUtils {
 
   static async deleteFile(path: string): Promise<void> {
     await fs.unlink(path);
+  }
+
+  static watchPaths(dirPaths: string[]): Observable<string> {
+    return new Observable<string>((subscriber) => {
+      const watchers: FSWatcher[] = [];
+
+      for (const dirPath of dirPaths) {
+        console.log(
+          chalk.bold(`Watching for changes in "${chalk.dim(dirPath)}"...`),
+        );
+        const watcher = watch(
+          dirPath,
+          { persistent: true, recursive: true },
+          (event, filename) => {
+            if (event === "change" && filename) {
+              subscriber.next(path.join(dirPath, filename));
+            }
+          },
+        );
+        watchers.push(watcher);
+      }
+
+      return () => {
+        watchers.forEach((watcher) => watcher.close());
+      };
+    });
+  }
+
+  private static isVideoFile(
+    allowedExtensions: string[],
+    filePath: string,
+  ): boolean {
+    const fileExt = path.extname(filePath);
+    return !!fileExt && allowedExtensions.includes(fileExt);
+  }
+
+  private static isEmbeddedSubtitleFile(fileName: string): boolean {
+    return !!/[.]embedded_/.exec(fileName);
   }
 }

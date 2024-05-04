@@ -19,7 +19,7 @@ export interface FFProbeOutput {
 export interface SubtitleStream {
   index: number;
   type: string;
-  title: string;
+  title: string | null;
   language: string;
 }
 
@@ -45,12 +45,15 @@ export class VideoUtils {
     );
     return ffprobeOutput.streams
       .filter((stream) => stream.codec_type === "subtitle")
-      .map((steam) => ({
-        index: steam.index,
-        type: steam.codec_name,
-        title: steam.tags.title,
-        language: steam.tags.language,
-      }));
+      .map((stream) => ({
+        index: stream.index || -1,
+        type: stream.codec_name || "",
+        title: stream.tags.title || null,
+        language: stream.tags.language || "",
+      }))
+      .filter(
+        (stream) => stream.index !== -1 && stream.type && stream.language,
+      );
   }
 
   static async extractSubtitleStream(
@@ -85,11 +88,15 @@ export class VideoUtils {
   ): string {
     return path.join(
       file.dirPath,
-      `${file.name}.${subtitleStream.language}.embedded_${subtitleStream.index}_${this.formatSubtitleTitle(subtitleStream.title)}.${subtitleStream.type}`,
+      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${subtitleStream.type}`,
     );
   }
 
-  private static formatSubtitleTitle(title: string): string {
-    return (title||'').toLowerCase().replaceAll(/[^a-z0-9]/gi, "_");
+  private static getSubtitleSuffix(subtitleStream: SubtitleStream): string {
+    const title = (subtitleStream.title || "")
+      .toLowerCase()
+      .replaceAll(/[^a-z0-9]/gi, "_")
+      .trim();
+    return `embedded_${subtitleStream.index}` + (title ? `_${title}` : "");
   }
 }

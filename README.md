@@ -11,9 +11,15 @@ Usage: subtitle-extractor [options] [command]
 
   Options:
     -h, --help          Output usage information
+    -p, --path          SUBTITLE_EXTRACTOR_PATH     | Directory to search for video files
     -l, --language      SUBTITLE_EXTRACTOR_LANGUAGE | Language code to extract subtitles (defaults to ["en"])
-    -p, --path          SUBTITLE_EXTRACTOR_PATH     | Directory to search for video files (defaults to [])
+    -e, --extension     SUBTITLE_EXTRACTOR_EXT      | Video file extensions (defaults to ["mkv","mp4","avi"])
+    -w, --watch         SUBTITLE_EXTRACTOR_WATCH    | Watch specified paths for change (disabled by default)
     -t, --timeout       SUBTITLE_EXTRACTOR_TIMEOUT  | Timeout for ffmpeg commands (defaults to 150000)
+
+  Examples:
+    - Extracts the english subtitles of mkv files in the specified directories
+    $ --path /media/series --path /media/movies --language en --extension mkv
 ```
 
 
