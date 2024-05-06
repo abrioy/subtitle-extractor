@@ -73,6 +73,13 @@ export class FileUtils {
     return result;
   }
 
+  static exists(path: string): Promise<boolean> {
+    return fs
+      .access(path)
+      .then(() => true)
+      .catch(() => false);
+  }
+
   static async setFileLastModifiedTime(
     path: string,
     time: Date,

@@ -16,6 +16,7 @@ Usage: subtitle-extractor [options] [command]
     -v, --video-format      SUBTITLE_EXTRACTOR_VIDEO_FORMAT      | Allowed video file extensions (defaults to ["mkv","mp4","avi"])
     -s, --subtitle-format   SUBTITLE_EXTRACTOR_SUBTITLE_FORMAT   | Allowed subtitle file extensions (defaults to ["srt","ass","sup"])
     -w, --watch             SUBTITLE_EXTRACTOR_WATCH             | Watch specified paths for change (disabled by default)
+    -d, --delay             SUBTITLE_EXTRACTOR_DELAY             | Delay before processing a watched directory (defaults to 10000)
     -t, --timeout           SUBTITLE_EXTRACTOR_TIMEOUT           | Timeout for ffmpeg commands (defaults to 150000)
 
   Examples:

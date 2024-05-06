@@ -15,6 +15,7 @@ import {
   interval,
   startWith,
   shareReplay,
+  delay,
 } from "rxjs";
 import { queueMap } from "./queue-operator";
 
@@ -36,13 +37,18 @@ args
   )
   .option(
     ["v", "video-format"],
-    "SUBTITLE_EXTRACTOR_VIDEO_EXT | Allowed video file extensions",
+    "SUBTITLE_EXTRACTOR_VIDEO_FORMAT | Allowed video file extensions",
     ["mkv", "mp4", "avi"],
   )
   .option(
     ["s", "subtitle-format"],
-    "SUBTITLE_EXTRACTOR_SUB_EXT | Allowed subtitle file extensions",
+    "SUBTITLE_EXTRACTOR_SUBTITLE_FORMAT | Allowed subtitle file extensions",
     ["srt", "ass", "sup"],
+  )
+  .option(
+    ["d", "delay"],
+    "SUBTITLE_EXTRACTOR_DELAY | Delay before processing a watched directory",
+    10000,
   )
   .option(
     ["t", "timeout"],
@@ -65,12 +71,14 @@ const watch: number = process.env.SUBTITLE_EXTRACTOR_WATCH
   ? process.env.SUBTITLE_EXTRACTOR_WATCH === "1" ||
     process.env.SUBTITLE_EXTRACTOR_WATCH === "true"
   : flags.watch;
-let videoFormats: string[] = process.env.SUBTITLE_EXTRACTOR_EXT
-  ? process.env.SUBTITLE_EXTRACTOR_EXT.split(",")
+let videoFormats: string[] = process.env.SUBTITLE_EXTRACTOR_VIDEO_FORMAT
+  ? process.env.SUBTITLE_EXTRACTOR_VIDEO_FORMAT.split(",")
   : flags.videoFormat;
-let subtitleFormats: string[] = process.env.SUBTITLE_EXTRACTOR_EXT
-  ? process.env.SUBTITLE_EXTRACTOR_EXT.split(",")
+let subtitleFormats: string[] = process.env.SUBTITLE_EXTRACTOR_SUBTITLE_FORMAT
+  ? process.env.SUBTITLE_EXTRACTOR_SUBTITLE_FORMAT.split(",")
   : flags.subtitleFormat;
+const watchDelay: number =
+  parseInt(process.env.SUBTITLE_EXTRACTOR_DELAY || "0") || flags.delay;
 const timeout: number =
   parseInt(process.env.SUBTITLE_EXTRACTOR_TIMEOUT || "0") || flags.timeout;
 
@@ -94,6 +102,7 @@ console.log(
 if (watch) {
   FileUtils.watchPaths(paths)
     .pipe(
+      delay(watchDelay),
       startWith(...paths),
       queueMap((changedPath) =>
         Extractor.extractSubtitles([changedPath], {
@@ -113,5 +122,7 @@ if (watch) {
     videoFormats,
     subtitleFormats,
     timeout,
-  }).catch((error) => console.error(chalk.red(error)));
+  }).catch((error) => {
+    console.error(chalk.red(error));
+  });
 }
