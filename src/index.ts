@@ -4,7 +4,18 @@ import * as chalk from "chalk";
 import * as args from "args";
 import { Extractor } from "./extractor";
 import { FileUtils } from "./file.utils";
-import { EMPTY, catchError, concatMap } from "rxjs";
+import {
+  EMPTY,
+  catchError,
+  concatMap,
+  map,
+  of,
+  queue,
+  timer,
+  interval,
+  startWith,
+} from "rxjs";
+import { queueMap } from "./queue-operator";
 
 args
   .option(
@@ -70,7 +81,8 @@ console.log(
 if (watch) {
   FileUtils.watchPaths(paths)
     .pipe(
-      concatMap((changedPath) =>
+      startWith(...paths),
+      queueMap((changedPath) =>
         Extractor.extractSubtitles(
           [changedPath],
           languages,
@@ -84,8 +96,8 @@ if (watch) {
       }),
     )
     .subscribe();
+} else {
+  Extractor.extractSubtitles(paths, languages, extensions, timeout).catch(
+    (error) => console.error(chalk.red(error)),
+  );
 }
-
-Extractor.extractSubtitles(paths, languages, extensions, timeout).catch(
-  (error) => console.error(chalk.red(error)),
-);
