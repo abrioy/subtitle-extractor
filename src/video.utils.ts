@@ -98,7 +98,7 @@ export class VideoUtils {
         "-map",
         `0:${subtitleStream.index}`,
         "-c:s",
-        subtitleStream.type,
+        this.getSubtitleEncoder(subtitleStream),
         subtitlePath,
       ],
       timeout,
@@ -129,10 +129,21 @@ export class VideoUtils {
     );
   }
 
+  private static getSubtitleEncoder(subtitleStream: SubtitleStream): string {
+    switch (subtitleStream.type) {
+      case "hdmv_pgs_subtitle":
+        return "copy";
+      default:
+        return subtitleStream.type;
+    }
+  }
+
   private static getSubtitleExtension(subtitleStream: SubtitleStream): string {
     switch (subtitleStream.type) {
       case "subrip":
         return "srt";
+      case "hdmv_pgs_subtitle":
+        return "sup";
       default:
         return subtitleStream.type;
     }

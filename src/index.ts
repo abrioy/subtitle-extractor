@@ -14,6 +14,7 @@ import {
   timer,
   interval,
   startWith,
+  shareReplay,
 } from "rxjs";
 import { queueMap } from "./queue-operator";
 
@@ -88,12 +89,10 @@ if (watch) {
           languages,
           extensions,
           timeout,
-        ),
+        ).catch((error) => {
+          console.error(chalk.red(error));
+        }),
       ),
-      catchError((error, caught) => {
-        console.error(chalk.red(error));
-        return caught;
-      }),
     )
     .subscribe();
 } else {

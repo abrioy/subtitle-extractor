@@ -42,7 +42,7 @@ export const queueMap = <T, O extends ObservableInput<any>>(
           return buffer.filter(
             (bufferValue) => !comparator(data.value, bufferValue),
           );
-        } 
+        }
         return buffer;
       }, []),
       exhaustMap((queue) => {
