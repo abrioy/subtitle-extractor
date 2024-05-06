@@ -38,6 +38,7 @@ export interface FFProbeOutput {
 export interface SubtitleStream {
   index: number;
   type: string;
+  extension: string;
   title: string | null;
   dispositions: string[];
   language: string;
@@ -69,6 +70,7 @@ export class VideoUtils {
       .map((stream) => ({
         index: stream.index || -1,
         type: stream.codec_name || "",
+        extension: this.getSubtitleExtension(stream.codec_name || ""),
         title: stream.tags.title || null,
         dispositions: Object.entries(stream.disposition)
           .filter(([, value]) => !!value)
@@ -112,7 +114,7 @@ export class VideoUtils {
   ): string {
     return path.join(
       file.dirPath,
-      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${this.getSubtitleExtension(subtitleStream)}`,
+      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${subtitleStream.extension}`,
     );
   }
 
@@ -138,14 +140,14 @@ export class VideoUtils {
     }
   }
 
-  private static getSubtitleExtension(subtitleStream: SubtitleStream): string {
-    switch (subtitleStream.type) {
+  private static getSubtitleExtension(type: string): string {
+    switch (type) {
       case "subrip":
         return "srt";
       case "hdmv_pgs_subtitle":
         return "sup";
       default:
-        return subtitleStream.type;
+        return type;
     }
   }
 }

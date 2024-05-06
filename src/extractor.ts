@@ -7,14 +7,17 @@ import * as path from "path";
 export class Extractor {
   static async extractSubtitles(
     paths: string[],
-    languages: string[],
-    extensions: string[],
-    timeout: number,
+    options: {
+      languages: string[];
+      videoFormats: string[];
+      subtitleFormats: string[];
+      timeout: number;
+    },
   ): Promise<void> {
     for (const path of paths) {
       console.log(`Processing all video files in "${chalk.dim(path)}"...`);
       let count = 0;
-      for await (const file of FileUtils.walk(extensions, path)) {
+      for await (const file of FileUtils.walk(options.videoFormats, path)) {
         count++;
         if (
           file.subtitles.length > 0 &&
@@ -37,18 +40,22 @@ export class Extractor {
 
           let subtitleStreams = await VideoUtils.getSubtitleStreams(
             file,
-            timeout,
+            options.timeout,
           );
-          subtitleStreams = subtitleStreams.filter((subtitleStream) =>
-            languages.some((language) =>
-              subtitleStream.language.includes(language),
-            ),
-          );
+          subtitleStreams = subtitleStreams
+            .filter((subtitleStream) =>
+              options.languages.some((language) =>
+                subtitleStream.language.includes(language),
+              ),
+            )
+            .filter((subtitleStreams) =>
+              options.subtitleFormats.includes(subtitleStreams.type),
+            );
           for (const subtitleStream of subtitleStreams) {
             const subtitlePath = await VideoUtils.extractSubtitleStream(
               file,
               subtitleStream,
-              timeout,
+              options.timeout,
             );
             await FileUtils.setFileLastModifiedTime(
               subtitlePath,

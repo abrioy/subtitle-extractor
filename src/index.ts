@@ -35,9 +35,14 @@ args
     false,
   )
   .option(
-    ["e", "extension"],
-    "SUBTITLE_EXTRACTOR_EXT | Video file extensions",
+    ["v", "video-format"],
+    "SUBTITLE_EXTRACTOR_VIDEO_EXT | Allowed video file extensions",
     ["mkv", "mp4", "avi"],
+  )
+  .option(
+    ["s", "subtitle-format"],
+    "SUBTITLE_EXTRACTOR_SUB_EXT | Allowed subtitle file extensions",
+    ["srt", "ass", "sup"],
   )
   .option(
     ["t", "timeout"],
@@ -60,9 +65,12 @@ const watch: number = process.env.SUBTITLE_EXTRACTOR_WATCH
   ? process.env.SUBTITLE_EXTRACTOR_WATCH === "1" ||
     process.env.SUBTITLE_EXTRACTOR_WATCH === "true"
   : flags.watch;
-let extensions: string[] = process.env.SUBTITLE_EXTRACTOR_EXT
+let videoFormats: string[] = process.env.SUBTITLE_EXTRACTOR_EXT
   ? process.env.SUBTITLE_EXTRACTOR_EXT.split(",")
-  : flags.extension;
+  : flags.videoFormat;
+let subtitleFormats: string[] = process.env.SUBTITLE_EXTRACTOR_EXT
+  ? process.env.SUBTITLE_EXTRACTOR_EXT.split(",")
+  : flags.subtitleFormat;
 const timeout: number =
   parseInt(process.env.SUBTITLE_EXTRACTOR_TIMEOUT || "0") || flags.timeout;
 
@@ -70,13 +78,17 @@ if (paths.length === 0 || languages.length === 0) {
   args.showHelp();
 }
 languages = languages.map((language) => language.trim());
-extensions = extensions.map((extension) => `.${extension}`.trim());
+videoFormats = videoFormats.map((extension) => `.${extension}`.trim());
+subtitleFormats = subtitleFormats.map((extension) => `.${extension}`.trim());
 
 console.log(
   `Allowed language(s): ${languages.map((language) => chalk.yellow(language)).join(", ")}`,
 );
 console.log(
-  `Allowed extension(s): ${extensions.map((extension) => chalk.yellow(extension)).join(", ")}`,
+  `Allowed video format(s): ${videoFormats.map((videoFormat) => chalk.yellow(videoFormat)).join(", ")}`,
+);
+console.log(
+  `Allowed subtitle format(s): ${subtitleFormats.map((subtitleFormat) => chalk.yellow(subtitleFormat)).join(", ")}`,
 );
 
 if (watch) {
@@ -84,19 +96,22 @@ if (watch) {
     .pipe(
       startWith(...paths),
       queueMap((changedPath) =>
-        Extractor.extractSubtitles(
-          [changedPath],
+        Extractor.extractSubtitles([changedPath], {
           languages,
-          extensions,
+          videoFormats,
+          subtitleFormats,
           timeout,
-        ).catch((error) => {
+        }).catch((error) => {
           console.error(chalk.red(error));
         }),
       ),
     )
     .subscribe();
 } else {
-  Extractor.extractSubtitles(paths, languages, extensions, timeout).catch(
-    (error) => console.error(chalk.red(error)),
-  );
+  Extractor.extractSubtitles(paths, {
+    languages,
+    videoFormats,
+    subtitleFormats,
+    timeout,
+  }).catch((error) => console.error(chalk.red(error)));
 }
