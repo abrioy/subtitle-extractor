@@ -86,8 +86,8 @@ if (paths.length === 0 || languages.length === 0) {
   args.showHelp();
 }
 languages = languages.map((language) => language.trim());
-videoFormats = videoFormats.map((extension) => `.${extension}`.trim());
-subtitleFormats = subtitleFormats.map((extension) => `.${extension}`.trim());
+videoFormats = videoFormats.map((extension) => `.${extension.trim()}`);
+subtitleFormats = subtitleFormats.map((extension) => `.${extension.trim()}`);
 
 console.log(
   `Allowed language(s): ${languages.map((language) => chalk.yellow(language)).join(", ")}`,
@@ -104,6 +104,7 @@ if (watch) {
     .pipe(
       delay(watchDelay),
       startWith(...paths),
+      concatMap((path) => FileUtils.toDirectory(path)),
       queueMap((changedPath) =>
         Extractor.extractSubtitles([changedPath], {
           languages,
@@ -112,6 +113,7 @@ if (watch) {
           timeout,
         }).catch((error) => {
           console.error(chalk.red(error));
+          return null;
         }),
       ),
     )

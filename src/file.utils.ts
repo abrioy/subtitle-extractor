@@ -80,6 +80,15 @@ export class FileUtils {
       .catch(() => false);
   }
 
+  static async toDirectory(unknownPath: string): Promise<string> {
+    const stat = await fs.stat(unknownPath);
+    if (!stat.isDirectory()) {
+      return path.dirname(unknownPath);
+    } else {
+      return unknownPath;
+    }
+  }
+
   static async setFileLastModifiedTime(
     path: string,
     time: Date,

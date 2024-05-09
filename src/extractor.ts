@@ -1,6 +1,7 @@
 import * as chalk from "chalk";
 import { FileUtils } from "./file.utils";
 import { VideoUtils } from "./video.utils";
+import { formatDuration, intervalToDuration } from "date-fns";
 
 export class Extractor {
   static async extractSubtitles(
@@ -12,7 +13,7 @@ export class Extractor {
       timeout: number;
     },
   ): Promise<void> {
-    for (const path of paths) {
+    for (let path of paths) {
       if (!(await FileUtils.exists(path))) {
         console.error(
           chalk.red(
@@ -21,9 +22,11 @@ export class Extractor {
         );
       } else {
         console.log(`Processing all video files in "${chalk.dim(path)}"...`);
-        let count = 0;
+        let videoCount = 0;
+        let subtitleCount = 0;
+        const startTime = new Date();
         for await (const file of FileUtils.walk(options.videoFormats, path)) {
-          count++;
+          videoCount++;
           if (
             file.subtitles.length > 0 &&
             file.subtitles.every((subtitle) => subtitle.upToDate)
@@ -56,7 +59,7 @@ export class Extractor {
                 ),
               )
               .filter((subtitleStreams) =>
-                options.subtitleFormats.includes(subtitleStreams.type),
+                options.subtitleFormats.includes(subtitleStreams.extension),
               );
             for (const subtitleStream of subtitleStreams) {
               const subtitlePath = await VideoUtils.extractSubtitleStream(
@@ -68,14 +71,21 @@ export class Extractor {
                 subtitlePath,
                 file.lastModificationDate,
               );
+              subtitleCount++;
             }
             console.log(
               `Extracted ${chalk.yellow(subtitleStreams.length)} subtitle file(s)`,
             );
           }
         }
+        console.log(`Path: ${chalk.dim(path)}`);
         console.log(
-          `Processed ${chalk.yellow(count)} video file(s) in "${chalk.dim(path)}".`,
+          `Processed ${chalk.yellow(videoCount)} video file(s) and extracted ${chalk.yellow(subtitleCount)} subtitle(s) in ${formatDuration(
+            intervalToDuration({
+              start: startTime,
+              end: new Date(),
+            }),
+          )}.`,
         );
       }
     }

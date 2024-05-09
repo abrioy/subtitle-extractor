@@ -114,7 +114,7 @@ export class VideoUtils {
   ): string {
     return path.join(
       file.dirPath,
-      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}.${subtitleStream.extension}`,
+      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}${subtitleStream.extension}`,
     );
   }
 
@@ -143,11 +143,11 @@ export class VideoUtils {
   private static getSubtitleExtension(type: string): string {
     switch (type) {
       case "subrip":
-        return "srt";
+        return ".srt";
       case "hdmv_pgs_subtitle":
-        return "sup";
+        return ".sup";
       default:
-        return type;
+        return `.${type}`;
     }
   }
 }
