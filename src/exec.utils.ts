@@ -1,16 +1,15 @@
+import * as chalk from "chalk";
+import { exec } from "child_process";
 import {
   Observable,
   filter,
-  from,
   lastValueFrom,
   map,
   scan,
   startWith,
   timeout,
 } from "rxjs";
-import { exec } from "child_process";
 import shellEscape = require("shell-escape");
-import * as chalk from "chalk";
 
 export class ExecUtils {
   static exec(

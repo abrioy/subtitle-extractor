@@ -1,8 +1,7 @@
-import { promises as fs, Dirent } from "fs";
-import { VideoFile } from "./file.utils";
-import { ExecUtils } from "./exec.utils";
-import * as path from "path";
 import * as chalk from "chalk";
+import * as path from "path";
+import { ExecUtils } from "./exec.utils";
+import { FileUtils, VideoFile } from "./file.utils";
 
 export interface FFProbeOutput {
   streams: {
@@ -108,13 +107,27 @@ export class VideoUtils {
     return subtitlePath;
   }
 
+  static async createDummySubtitle(file: VideoFile): Promise<string> {
+    const subtitlePath = this.generateSubtitlePath(file, {
+      index: 0,
+      type: "dummy",
+      extension: ".nosub",
+      title: null,
+      dispositions: [],
+      language: "",
+    });
+    FileUtils.createFile(subtitlePath);
+    console.log(`Creating dummy subtitle "${chalk.dim(subtitlePath)}"...`);
+    return subtitlePath;
+  }
+
   private static generateSubtitlePath(
     file: VideoFile,
     subtitleStream: SubtitleStream,
   ): string {
     return path.join(
       file.dirPath,
-      `${file.name}.${subtitleStream.language}.${this.getSubtitleSuffix(subtitleStream)}${subtitleStream.extension}`,
+      `${file.name}.${subtitleStream.language ? `${subtitleStream.language}.` : ""}${this.getSubtitleSuffix(subtitleStream)}${subtitleStream.extension}`,
     );
   }
 

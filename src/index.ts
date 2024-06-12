@@ -1,22 +1,10 @@
 #!/usr/bin/env ts-node
 
-import * as chalk from "chalk";
 import * as args from "args";
+import * as chalk from "chalk";
+import { concatMap, delay, filter, startWith } from "rxjs";
 import { Extractor } from "./extractor";
 import { FileUtils } from "./file.utils";
-import {
-  EMPTY,
-  catchError,
-  concatMap,
-  map,
-  of,
-  queue,
-  timer,
-  interval,
-  startWith,
-  shareReplay,
-  delay,
-} from "rxjs";
 import { queueMap } from "./queue-operator";
 
 args
@@ -55,6 +43,11 @@ args
     "SUBTITLE_EXTRACTOR_TIMEOUT | Timeout for ffmpeg commands",
     150000,
   )
+  .option(
+    ["r", "refresh"],
+    "SUBTITLE_EXTRACTOR_REFRESH | Refresh exising subtitles",
+    false,
+  )
   .example(
     "--path /media/series --path /media/movies --language en --extension mkv",
     "Extracts the english subtitles of mkv files in the specified directories",
@@ -81,6 +74,9 @@ const watchDelay: number =
   parseInt(process.env.SUBTITLE_EXTRACTOR_DELAY || "0") || flags.delay;
 const timeout: number =
   parseInt(process.env.SUBTITLE_EXTRACTOR_TIMEOUT || "0") || flags.timeout;
+const refresh: boolean = process.env.SUBTITLE_EXTRACTOR_REFRESH
+  ? Boolean(process.env.SUBTITLE_EXTRACTOR_REFRESH)
+  : flags.refresh;
 
 if (paths.length === 0 || languages.length === 0) {
   args.showHelp();
@@ -98,6 +94,9 @@ console.log(
 console.log(
   `Allowed subtitle format(s): ${subtitleFormats.map((subtitleFormat) => chalk.yellow(subtitleFormat)).join(", ")}`,
 );
+console.log(
+  `timeout: ${chalk.yellow(timeout)}, refresh: ${chalk.yellow(refresh)}, watch delay: ${chalk.yellow(watchDelay)}`,
+);
 
 if (watch) {
   FileUtils.watchPaths(paths)
@@ -105,12 +104,14 @@ if (watch) {
       delay(watchDelay),
       startWith(...paths),
       concatMap((path) => FileUtils.toDirectory(path)),
+      filter((path) => !!path),
       queueMap((changedPath) =>
         Extractor.extractSubtitles([changedPath], {
           languages,
           videoFormats,
           subtitleFormats,
           timeout,
+          refresh,
         }).catch((error) => {
           console.error(chalk.red(error));
           return null;
@@ -124,6 +125,7 @@ if (watch) {
     videoFormats,
     subtitleFormats,
     timeout,
+    refresh,
   }).catch((error) => {
     console.error(chalk.red(error));
   });

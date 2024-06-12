@@ -1,7 +1,7 @@
 import * as chalk from "chalk";
+import { formatDuration, intervalToDuration } from "date-fns";
 import { FileUtils } from "./file.utils";
 import { VideoUtils } from "./video.utils";
-import { formatDuration, intervalToDuration } from "date-fns";
 
 export class Extractor {
   static async extractSubtitles(
@@ -11,6 +11,7 @@ export class Extractor {
       videoFormats: string[];
       subtitleFormats: string[];
       timeout: number;
+      refresh: boolean;
     },
   ): Promise<void> {
     for (let path of paths) {
@@ -23,11 +24,13 @@ export class Extractor {
       } else {
         console.log(`Processing all video files in "${chalk.dim(path)}"...`);
         let videoCount = 0;
+        let newVideoCount = 0;
         let subtitleCount = 0;
         const startTime = new Date();
         for await (const file of FileUtils.walk(options.videoFormats, path)) {
           videoCount++;
           if (
+            !options.refresh &&
             file.subtitles.length > 0 &&
             file.subtitles.every((subtitle) => subtitle.upToDate)
           ) {
@@ -35,13 +38,14 @@ export class Extractor {
               `Found ${chalk.yellow(file.subtitles.length)} up to date subtitle(s) for "${chalk.dim(file.path)}"`,
             );
           } else {
+            newVideoCount++;
             console.log(
               `Extracting subtitles for "${chalk.dim(file.path)}"...`,
             );
 
             if (file.subtitles.length > 0) {
               console.log(
-                `Removing ${chalk.red(file.subtitles.length)} out of date subtitle file(s)...`,
+                `Removing ${chalk.red(file.subtitles.length)} ${options.refresh ? "" : "out of date subtitle"} file(s)...`,
               );
               for (const subtitle of file.subtitles) {
                 await FileUtils.deleteFile(subtitle.path);
@@ -61,6 +65,7 @@ export class Extractor {
               .filter((subtitleStreams) =>
                 options.subtitleFormats.includes(subtitleStreams.extension),
               );
+
             for (const subtitleStream of subtitleStreams) {
               const subtitlePath = await VideoUtils.extractSubtitleStream(
                 file,
@@ -73,6 +78,15 @@ export class Extractor {
               );
               subtitleCount++;
             }
+
+            if (subtitleStreams.length === 0) {
+              const subtitlePath = await VideoUtils.createDummySubtitle(file);
+              await FileUtils.setFileLastModifiedTime(
+                subtitlePath,
+                file.lastModificationDate,
+              );
+            }
+
             console.log(
               `Extracted ${chalk.yellow(subtitleStreams.length)} subtitle file(s)`,
             );
@@ -80,7 +94,7 @@ export class Extractor {
         }
         console.log(`Path: ${chalk.dim(path)}`);
         console.log(
-          `Processed ${chalk.yellow(videoCount)} video file(s) and extracted ${chalk.yellow(subtitleCount)} subtitle(s) in ${formatDuration(
+          `Processed ${chalk.yellow(videoCount)} (${newVideoCount} new) video file(s) and extracted ${chalk.yellow(subtitleCount)} subtitle(s) in ${formatDuration(
             intervalToDuration({
               start: startTime,
               end: new Date(),

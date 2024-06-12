@@ -1,7 +1,7 @@
 import chalk = require("chalk");
 import exp = require("constants");
 import { differenceInMilliseconds } from "date-fns";
-import { promises as fs, Dirent, FSWatcher, watch } from "fs";
+import { Dirent, FSWatcher, promises as fs, watch } from "fs";
 import * as path from "path";
 import { Observable } from "rxjs";
 
@@ -81,12 +81,13 @@ export class FileUtils {
   }
 
   static async toDirectory(unknownPath: string): Promise<string> {
-    const stat = await fs.stat(unknownPath);
-    if (!stat.isDirectory()) {
-      return path.dirname(unknownPath);
-    } else {
-      return unknownPath;
+    if (unknownPath) {
+      const stat = await fs.stat(unknownPath);
+      if (!stat.isDirectory()) {
+        return path.dirname(unknownPath);
+      }
     }
+    return unknownPath;
   }
 
   static async setFileLastModifiedTime(
@@ -124,6 +125,11 @@ export class FileUtils {
         watchers.forEach((watcher) => watcher.close());
       };
     });
+  }
+
+  static async createFile(path: string): Promise<void> {
+    const file = await fs.open(path, "w");
+    await file.close();
   }
 
   private static isVideoFile(
