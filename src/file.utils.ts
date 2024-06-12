@@ -1,13 +1,21 @@
 import chalk = require("chalk");
-import exp = require("constants");
 import { differenceInMilliseconds } from "date-fns";
 import { Dirent, FSWatcher, promises as fs, watch } from "fs";
 import * as path from "path";
-import { Observable } from "rxjs";
+import {
+  Observable,
+  interval,
+  lastValueFrom,
+  switchMap,
+  takeUntil,
+  takeWhile,
+  timer,
+} from "rxjs";
 
 export interface SubtitleFile {
   path: string;
   upToDate: boolean;
+  dummy: boolean;
 }
 
 export interface VideoFile {
@@ -67,24 +75,41 @@ export class FileUtils {
           path: entryPath,
           upToDate:
             differenceInMilliseconds(lastModificationDate, stats.mtime) < 1000,
+          dummy: entryPath.endsWith(".nosub"),
         });
       }
     }
     return result;
   }
 
-  static exists(path: string): Promise<boolean> {
-    return fs
-      .access(path)
-      .then(() => true)
-      .catch(() => false);
+  static async exists(path: string): Promise<boolean> {
+    try {
+      await fs.access(path);
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
-  static async toDirectory(unknownPath: string): Promise<string> {
+  static async toDirectory(unknownPath: string): Promise<string | null> {
     if (unknownPath) {
-      const stat = await fs.stat(unknownPath);
-      if (!stat.isDirectory()) {
-        return path.dirname(unknownPath);
+      try {
+        const stat = await fs.stat(unknownPath);
+        if (!stat.isDirectory()) {
+          return path.dirname(unknownPath);
+        }
+      } catch (error) {
+        const code = (error as any)?.code;
+        if (code === "ENOENT") {
+          console.error(`Path does not exist: "${chalk.red(unknownPath)}"`);
+          return null;
+        } else {
+          console.error(
+            `Error while fetching directory for path: "${chalk.red(unknownPath)}"`,
+            error,
+          );
+          return null;
+        }
       }
     }
     return unknownPath;
@@ -98,7 +123,9 @@ export class FileUtils {
   }
 
   static async deleteFile(path: string): Promise<void> {
-    await fs.unlink(path);
+    if (await FileUtils.exists(path)) {
+      await fs.unlink(path);
+    }
   }
 
   static watchPaths(dirPaths: string[]): Observable<string> {
@@ -128,8 +155,7 @@ export class FileUtils {
   }
 
   static async createFile(path: string): Promise<void> {
-    const file = await fs.open(path, "w");
-    await file.close();
+    await fs.writeFile(path, "");
   }
 
   private static isVideoFile(

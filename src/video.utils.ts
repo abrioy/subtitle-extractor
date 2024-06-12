@@ -116,8 +116,8 @@ export class VideoUtils {
       dispositions: [],
       language: "",
     });
-    FileUtils.createFile(subtitlePath);
     console.log(`Creating dummy subtitle "${chalk.dim(subtitlePath)}"...`);
+    await FileUtils.createFile(subtitlePath);
     return subtitlePath;
   }
 

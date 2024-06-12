@@ -35,7 +35,7 @@ export class Extractor {
             file.subtitles.every((subtitle) => subtitle.upToDate)
           ) {
             console.log(
-              `Found ${chalk.yellow(file.subtitles.length)} up to date subtitle(s) for "${chalk.dim(file.path)}"`,
+              `Found ${chalk.yellow(file.subtitles.filter((subtitle) => !subtitle.dummy).length)} up to date subtitle(s) for "${chalk.dim(file.path)}"`,
             );
           } else {
             newVideoCount++;
@@ -45,7 +45,7 @@ export class Extractor {
 
             if (file.subtitles.length > 0) {
               console.log(
-                `Removing ${chalk.red(file.subtitles.length)} ${options.refresh ? "" : "out of date subtitle"} file(s)...`,
+                `Removing ${chalk.red(file.subtitles.length)}${options.refresh ? " " : " out of date subtitle "}file(s)...`,
               );
               for (const subtitle of file.subtitles) {
                 await FileUtils.deleteFile(subtitle.path);
@@ -93,13 +93,15 @@ export class Extractor {
           }
         }
         console.log(`Path: ${chalk.dim(path)}`);
-        console.log(
-          `Processed ${chalk.yellow(videoCount)} (${newVideoCount} new) video file(s) and extracted ${chalk.yellow(subtitleCount)} subtitle(s) in ${formatDuration(
+        const duration =
+          formatDuration(
             intervalToDuration({
               start: startTime,
               end: new Date(),
             }),
-          )}.`,
+          ) || "0s";
+        console.log(
+          `Processed ${chalk.yellow(videoCount)} (${chalk.cyan(newVideoCount)} new) video file(s) and extracted ${chalk.yellow(subtitleCount)} subtitle(s) in ${chalk.dim(duration)}.`,
         );
       }
     }
