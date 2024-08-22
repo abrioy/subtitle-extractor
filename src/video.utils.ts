@@ -27,7 +27,7 @@ export interface FFProbeOutput {
       dependent: 0 | 1;
       still_image: 0 | 1;
     };
-    tags: {
+    tags?: {
       language: string;
       title: string;
     };
@@ -70,11 +70,11 @@ export class VideoUtils {
         index: stream.index || -1,
         type: stream.codec_name || "",
         extension: this.getSubtitleExtension(stream.codec_name || ""),
-        title: stream.tags.title || null,
-        dispositions: Object.entries(stream.disposition)
+        title: stream.tags?.title || null,
+        dispositions: Object.entries(stream.disposition || {})
           .filter(([, value]) => !!value)
           .map(([key]) => key),
-        language: stream.tags.language || "",
+        language: stream.tags?.language || "",
       }))
       .filter(
         (stream) => stream.index !== -1 && stream.type && stream.language,

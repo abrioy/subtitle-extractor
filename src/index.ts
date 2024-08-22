@@ -7,6 +7,7 @@ import {
   concatMap,
   delay,
   filter,
+  lastValueFrom,
   startWith,
   switchMap,
   timer,
@@ -113,8 +114,8 @@ import { queueMap } from "./queue-operator";
   );
 
   if (watch) {
-    FileUtils.watchPaths(paths)
-      .pipe(
+    await lastValueFrom(
+      FileUtils.watchPaths(paths).pipe(
         catchError((error, caught) => {
           console.error(
             chalk.red("Error while watching for changes:"),
@@ -138,17 +139,17 @@ import { queueMap } from "./queue-operator";
             return null;
           }),
         ),
-      )
-      .subscribe();
+      ),
+    );
   } else {
-    Extractor.extractSubtitles(paths, {
+    await Extractor.extractSubtitles(paths, {
       languages,
       videoFormats,
       subtitleFormats,
       timeout,
       refresh,
-    }).catch((error) => {
-      console.error(chalk.red(error));
     });
   }
-})();
+})().catch((error) => {
+  console.error(chalk.red(error));
+});
