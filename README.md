@@ -4,8 +4,15 @@ Uses ffmpeg to extract embedded subtitles from every video file in a folder.
 
 The script will check if there is already a subtitle folder with the same modification date as the video file before trying to extract new subtitles.
 
+## How does it works
 
-usage:
+Given a directory, we recursively traverse it to find video and subtitle files. If the last modification date of both files is the same, we assume the subtitles are up to date.
+
+If a video file lacks subtitles, we attempt to extract every track for the desired languages using ffmpeg. If no matching tracks are found, we create a file named $VIDEO_FILE.nosub to indicate that the file doesn't need to be checked again.
+
+Using the filesystem in this way allows for a very fast run if there are no changes (less than a second for a few thousand files), though the initial pass will still take a long time as we do not parallelize the process.
+
+# Usage
 ```
 Usage: subtitle-extractor [options] [command]
 
@@ -24,8 +31,7 @@ Usage: subtitle-extractor [options] [command]
     $ --path /media/series --path /media/movies --language en --extension mkv
 ```
 
-docker compose example:
-
+# Docker Compose
 ```yaml
 version: "3.8"
 services:
