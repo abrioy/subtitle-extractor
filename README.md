@@ -1,16 +1,20 @@
 # subtitle-extractor
 
-Uses ffmpeg to extract embedded subtitles from every video file in a folder. 
+A tool that uses ffmpeg to extract embedded subtitles from every video file in a folder.
 
-The script will check if there is already a subtitle folder with the same modification date as the video file before trying to extract new subtitles.
+## How It Works
 
-## How does it works
+Given a directory, the tool recursively traverses it to locate video and subtitle files. If the last modification date of both files is identical, the subtitles are assumed to be up to date.
 
-Given a directory, we recursively traverse it to find video and subtitle files. If the last modification date of both files is the same, we assume the subtitles are up to date.
+If a video file lacks subtitles, the tool attempts to extract every track for the specified languages using ffmpeg. If no matching tracks are found, a file named `$VIDEO_FILE.nosub` is created to indicate that the file doesn't need to be checked again.
 
-If a video file lacks subtitles, we attempt to extract every track for the desired languages using ffmpeg. If no matching tracks are found, we create a file named $VIDEO_FILE.nosub to indicate that the file doesn't need to be checked again.
+This approach enables very fast subsequent runs if no changes are detected (less than a second for a few thousand files), although the initial pass will still take some time since the process is not parallelized.
 
-Using the filesystem in this way allows for a very fast run if there are no changes (less than a second for a few thousand files), though the initial pass will still take a long time as we do not parallelize the process.
+The `--watch` option uses [`fs.watch`](https://nodejs.org/docs/latest/api/fs.html#fspromiseswatchfilename-options) to monitor any new or modified video files.
+
+### Supported Formats
+
+Since ffmpeg handles the heavy lifting, please refer to the documentation of the version installed on your system, or check the Docker image: https://hub.docker.com/r/linuxserver/ffmpeg.
 
 # Usage
 ```
